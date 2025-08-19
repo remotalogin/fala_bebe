@@ -131,41 +131,41 @@
     document.getElementById('speakBaby').addEventListener('click',()=>speak(babyInput.value));
     document.getElementById('stopTTS').addEventListener('click',()=>speechSynthesis.cancel());
 
-    // ====== Gemini API ======
-    async function gerarFala(personagem){
-      const tema = prompt("Digite o tema para a fala:");
-      if(!tema) return;
+    // ====== Gemini API (FUNÇÃO ATUALIZADA) ======
+    async function gerarFala(personagem) {
+        const tema = prompt("Digite o tema para a fala:");
+        if (!tema) return;
 
-      try {
-        const resp = await fetch("/api/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ personagem, tema })
-        });
-
-        const text = await resp.text(); // primeiro ler como texto
-
-        let data;
         try {
-          data = JSON.parse(text);
-        } catch(e){
-          alert("Resposta inválida do servidor: " + text);
-          return;
-        }
+            const resp = await fetch("/api/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ personagem, tema })
+            });
 
-        if(data.texto){
-          if(personagem==='mulher') womanInput.value = data.texto;
-          else babyInput.value = data.texto;
-          refresh();
-        } else {
-          alert("Erro: " + (data.error || "Não foi possível gerar."));
-        }
+            // Primeiro, verifica se a resposta HTTP foi um erro (ex: 404, 500)
+            if (!resp.ok) {
+                // Tenta ler a mensagem de erro que o backend enviou
+                const errorData = await resp.json().catch(() => ({ error: "Erro desconhecido no servidor" }));
+                alert(`Erro do servidor: ${resp.status} - ${errorData.error || resp.statusText}`);
+                return;
+            }
 
-      } catch(err){
-        alert("Falha: " + err.message);
-      }
+            // Se a resposta foi OK (2xx), então processa o JSON
+            const data = await resp.json();
+
+            if (data.texto) {
+                if (personagem === 'mulher') womanInput.value = data.texto;
+                else babyInput.value = data.texto;
+                refresh();
+            } else {
+                alert("Erro: " + (data.error || "A resposta não contém texto."));
+            }
+
+        } catch (err) {
+            alert("Falha na comunicação com o servidor: " + err.message);
+        }
     }
-
   </script>
 </body>
 </html>
