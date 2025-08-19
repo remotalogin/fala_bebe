@@ -1,34 +1,176 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Gerador de Falas</title>
-  <script src="script.js" defer></script>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gerador de Prompt – Versão em uma linha</title>
+  <style>
+    :root{--bg:#0b0b10;--card:#151520;--muted:#9aa3b2;--text:#e6e9ef;--accent:#6aa0ff;--radius:18px}
+    *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#0b0b10,#0e0e15);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
+    .wrap{max-width:980px;margin:40px auto;padding:20px}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,.35);}
+    .head{display:flex;gap:12px;align-items:center;padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.06)}
+    .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
+    h1{font-size:20px;margin:0;font-weight:700}
+    .body{padding:18px 20px;display:grid;gap:16px}
+    label{font-size:12px;color:var(--muted);letter-spacing:.3px;text-transform:uppercase}
+    .row{display:grid;gap:8px}
+    .controls{display:grid;gap:14px}
+    .grid{display:grid;gap:12px;grid-template-columns:1fr;}
+    @media(min-width:860px){.grid{grid-template-columns:1.2fr .8fr}}
+    input[type="text"],select,textarea{width:100%;padding:12px 14px;background:#0f0f17;border:1px solid #232334;color:var(--text);border-radius:12px;outline:none}
+    textarea{min-height:140px;resize:vertical}
+    .btns{display:flex;flex-wrap:wrap;gap:10px}
+    button{appearance:none;border:1px solid #2a2a3a;background:#12121a;color:var(--text);padding:10px 14px;border-radius:12px;cursor:pointer;transition:.2s;}
+    button:hover{transform:translateY(-1px);border-color:#3a3a4a}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;background:#0f0f17;border:1px solid #232334;color:var(--muted);font-size:12px}
+    .audio{display:flex;gap:10px}
+    .mini{font-size:12px;color:var(--muted)}
+    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-size:13px}
+  </style>
 </head>
 <body>
-  <h2>Gerador de Cena</h2>
+  <div class="wrap">
+    <div class="card">
+      <div class="head">
+        <span class="dot"></span>
+        <h1>Gerador de prompt (uma linha, sem quebras)</h1>
+      </div>
+      <div class="body">
+        <div class="controls grid">
+          <div class="row">
+            <label for="gender">Gênero da criança</label>
+            <select id="gender">
+              <option value="menino">Menino</option>
+              <option value="menina">Menina</option>
+            </select>
+          </div>
+          <div class="row">
+            <label for="color">Cor da roupa do bebê (em inglês)</label>
+            <input id="color" type="text" placeholder="ex.: red, yellow, lilac, baby pink" value="red" />
+          </div>
+          <div class="row">
+            <label for="womanLine">Fala da Mulher</label>
+            <div class="btns">
+              <input id="womanLine" type="text" value="Filho, se o papai não pagar a pensão, não tem Danone, viu?" style="flex:1" />
+              <button onclick="gerarFala('mulher')">Gerar com IA</button>
+            </div>
+          </div>
+          <div class="row">
+            <label for="babyLine">Fala do Bebê</label>
+            <div class="btns">
+              <input id="babyLine" type="text" value="Sem Danone não tem perdão! Se não pagar, vai direto pra prisão!" style="flex:1" />
+              <button onclick="gerarFala('bebe')">Gerar com IA</button>
+            </div>
+          </div>
+          <div class="row">
+            <label for="preview">Prompt final (tudo em uma única linha, sem quebras):</label>
+            <textarea id="preview" class="mono" readonly></textarea>
+            <div class="btns">
+              <button id="copy">Copiar</button>
+              <button id="refresh">Atualizar</button>
+            </div>
+          </div>
+        </div>
 
-  <label>Gênero da criança:</label>
-  <select id="genero">
-    <option value="menino">Menino</option>
-    <option value="menina">Menina</option>
-  </select><br><br>
+        <div class="row">
+          <span class="pill">Diálogo em PT-BR com TTS (navegadores compatíveis)</span>
+          <div class="audio">
+            <button id="speakWoman">▶ Mulher</button>
+            <button id="speakBaby">▶ Bebê</button>
+            <button id="stopTTS">⏹ Parar</button>
+          </div>
+          <div class="mini">Mulher: <span id="previewWoman"></span><br/>Bebê: <span id="previewBaby"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  <label>Cor da roupa (em inglês):</label>
-  <input type="text" id="cor" placeholder="ex: pink, blue"><br><br>
+  <script>
+    const genderInput = document.getElementById('gender');
+    const colorInput = document.getElementById('color');
+    const womanInput = document.getElementById('womanLine');
+    const babyInput = document.getElementById('babyLine');
+    const preview = document.getElementById('preview');
+    const copyBtn = document.getElementById('copy');
+    const refreshBtn = document.getElementById('refresh');
+    const previewWoman = document.getElementById('previewWoman');
+    const previewBaby = document.getElementById('previewBaby');
 
-  <label>Fala da mulher:</label>
-  <textarea id="falaMulher"></textarea>
-  <button onclick="gerarFala('mulher')">Gerar com IA</button><br><br>
+    function buildPrompt(gender,col,woman,baby){
+      const safeGender = gender || 'menino';
+      const safeColor = (col||'red').trim();
+      const safeWoman = (woman||'').trim();
+      const safeBaby  = (baby||'').trim();
 
-  <label>Fala do bebê:</label>
-  <textarea id="falaBebe"></textarea>
-  <button onclick="gerarFala('bebe')">Gerar com IA</button><br><br>
+      const childDesc = safeGender === 'menino'
+        ? `Baby Boy Speaker: 7–9 months old, standing in a white crib, wearing a fluffy ${safeColor} onesie with tiny cloud patterns and a matching knit beanie.`
+        : `Baby Girl Speaker: 7–9 months old, standing in a white crib, wearing a fluffy ${safeColor} dress with tiny flower patterns and a headband bow.`;
 
-  <h3>Prompt final:</h3>
-  <pre id="prompt"></pre>
+      const base = `Character 1 – Woman Interviewer: Young woman, partially visible, pastel pink nails, holding a small mic. Warm, curious expression. Character 2 – ${childDesc} Chubby cheeks, expressive lips, bright eyes, playful yet mock-serious face. Scene: Soft daylight fills a cozy room. Background gently blurred to focus on the interaction. Woman leans in, mic near baby’s mouth. Baby responds with exaggerated legal authority and comedic tone. Audio: Track 1 – Woman's voice: Warm, natural adult tone. Delivers full line, 1 sec pause. Track 2 – Baby's voice: High-pitched, innocent but mock-stern. Starts after pause. Dialogue (Portuguese): Woman: “${safeWoman}” Baby: “${safeBaby}”`;
 
-  <button onclick="copiarPrompt()">Copiar Prompt</button>
+      return base.replace(/\s+/g,' ').trim();
+    }
+
+    function refresh(){
+      const oneLine = buildPrompt(genderInput.value, colorInput.value, womanInput.value, babyInput.value);
+      preview.value = oneLine;
+      previewWoman.textContent = womanInput.value;
+      previewBaby.textContent = babyInput.value;
+    }
+
+    copyBtn.addEventListener('click', async () => {
+      try{ await navigator.clipboard.writeText(preview.value); copyBtn.textContent = 'Copiado!'; setTimeout(()=>copyBtn.textContent='Copiar',1200);}catch(e){ copyBtn.textContent='Falhou :(' }
+    });
+
+    refreshBtn.addEventListener('click', refresh);
+    genderInput.addEventListener('input', refresh);
+    colorInput.addEventListener('input', refresh);
+    womanInput.addEventListener('input', refresh);
+    babyInput.addEventListener('input', refresh);
+    window.addEventListener('load', refresh);
+
+    // ====== TTS ======
+    function speak(text){
+      if(!('speechSynthesis' in window)) return alert('Seu navegador não suporta síntese de voz.');
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'pt-BR'; utter.rate = 1; utter.pitch = 1; utter.volume = 1;
+      const voices = speechSynthesis.getVoices();
+      if(voices && voices.length){
+        const best = voices.find(v => v.lang.toLowerCase().startsWith('pt-br')) || voices[0];
+        utter.voice = best;
+      }
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utter);
+    }
+
+    document.getElementById('speakWoman').addEventListener('click',()=>speak(womanInput.value));
+    document.getElementById('speakBaby').addEventListener('click',()=>speak(babyInput.value));
+    document.getElementById('stopTTS').addEventListener('click',()=>speechSynthesis.cancel());
+
+    // ====== IA (Gemini) ======
+    async function gerarFala(personagem){
+      const tema = prompt("Digite o tema para a fala:");
+      if(!tema) return;
+
+      try {
+        const resp = await fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ personagem, tema })
+        });
+        const data = await resp.json();
+        if(data.texto){
+          if(personagem === 'mulher') womanInput.value = data.texto;
+          else babyInput.value = data.texto;
+          refresh();
+        } else {
+          alert("Erro: " + (data.error || "Não foi possível gerar."));
+        }
+      } catch (err) {
+        alert("Falha: " + err.message);
+      }
+    }
+  </script>
 </body>
 </html>
