@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Gerador de Falas</title>
+  <script src="script.js" defer></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h2>Gerador de Cena</h2>
+
+  <label>Gênero da criança:</label>
+  <select id="genero">
+    <option value="menino">Menino</option>
+    <option value="menina">Menina</option>
+  </select><br><br>
+
+  <label>Cor da roupa (em inglês):</label>
+  <input type="text" id="cor" placeholder="ex: pink, blue"><br><br>
+
+  <label>Fala da mulher:</label>
+  <textarea id="falaMulher"></textarea>
+  <button onclick="gerarFala('mulher')">Gerar com IA</button><br><br>
+
+  <label>Fala do bebê:</label>
+  <textarea id="falaBebe"></textarea>
+  <button onclick="gerarFala('bebe')">Gerar com IA</button><br><br>
+
+  <h3>Prompt final:</h3>
+  <pre id="prompt"></pre>
+
+  <button onclick="copiarPrompt()">Copiar Prompt</button>
+</body>
+</html>
