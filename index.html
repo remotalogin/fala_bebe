@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Gerador de Prompt – Versão em uma linha</title>
+  <title>Prompt da Cena – Versão em uma linha</title>
   <style>
     :root{--bg:#0b0b10;--card:#151520;--muted:#9aa3b2;--text:#e6e9ef;--accent:#6aa0ff;--radius:18px}
     *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#0b0b10,#0e0e15);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
@@ -39,29 +39,18 @@
       <div class="body">
         <div class="controls grid">
           <div class="row">
-            <label for="gender">Gênero da criança</label>
-            <select id="gender">
-              <option value="menino">Menino</option>
-              <option value="menina">Menina</option>
-            </select>
-          </div>
-          <div class="row">
-            <label for="color">Cor da roupa do bebê (em inglês)</label>
-            <input id="color" type="text" placeholder="ex.: red, yellow, lilac, baby pink" value="red" />
+            <label for="color">Cor da roupa do bebê</label>
+            <input id="color" type="text" placeholder="ex.: vermelho, amarelo, lilás, rosa bebê" value="vermelho" />
           </div>
           <div class="row">
             <label for="womanLine">Fala da Mulher</label>
-            <div class="btns">
-              <input id="womanLine" type="text" value="Filho, se o papai não pagar a pensão, não tem Danone, viu?" style="flex:1" />
-              <button onclick="gerarFala('mulher')">Gerar com IA</button>
-            </div>
+            <input id="womanLine" type="text" value="Filho, se o papai não pagar a pensão, não tem Danone, viu?" />
+            <button onclick="gerarFala('mulher')">Gerar automático</button>
           </div>
           <div class="row">
             <label for="babyLine">Fala do Bebê</label>
-            <div class="btns">
-              <input id="babyLine" type="text" value="Sem Danone não tem perdão! Se não pagar, vai direto pra prisão!" style="flex:1" />
-              <button onclick="gerarFala('bebe')">Gerar com IA</button>
-            </div>
+            <input id="babyLine" type="text" value="Sem Danone não tem perdão! Se não pagar, vai direto pra prisão!" />
+            <button onclick="gerarFala('bebe')">Gerar automático</button>
           </div>
           <div class="row">
             <label for="preview">Prompt final (tudo em uma única linha, sem quebras):</label>
@@ -87,7 +76,6 @@
   </div>
 
   <script>
-    const genderInput = document.getElementById('gender');
     const colorInput = document.getElementById('color');
     const womanInput = document.getElementById('womanLine');
     const babyInput = document.getElementById('babyLine');
@@ -97,26 +85,22 @@
     const previewWoman = document.getElementById('previewWoman');
     const previewBaby = document.getElementById('previewBaby');
 
-    function buildPrompt(gender,col,woman,baby){
-      const safeGender = gender || 'menino';
-      const safeColor = (col||'red').trim();
+    function buildPrompt(col,woman,baby){
+      const safeColor = (col||'vermelho').trim();
       const safeWoman = (woman||'').trim();
       const safeBaby  = (baby||'').trim();
-
-      const childDesc = safeGender === 'menino'
-        ? `Baby Boy Speaker: 7–9 months old, standing in a white crib, wearing a fluffy ${safeColor} onesie with tiny cloud patterns and a matching knit beanie.`
-        : `Baby Girl Speaker: 7–9 months old, standing in a white crib, wearing a fluffy ${safeColor} dress with tiny flower patterns and a headband bow.`;
-
-      const base = `Character 1 – Woman Interviewer: Young woman, partially visible, pastel pink nails, holding a small mic. Warm, curious expression. Character 2 – ${childDesc} Chubby cheeks, expressive lips, bright eyes, playful yet mock-serious face. Scene: Soft daylight fills a cozy room. Background gently blurred to focus on the interaction. Woman leans in, mic near baby’s mouth. Baby responds with exaggerated legal authority and comedic tone. Audio: Track 1 – Woman's voice: Warm, natural adult tone. Delivers full line, 1 sec pause. Track 2 – Baby's voice: High-pitched, innocent but mock-stern. Starts after pause. Dialogue (Portuguese): Woman: “${safeWoman}” Baby: “${safeBaby}”`;
-
+      const base = `Character 1 – Woman Interviewer: Young woman, partially visible, pastel pink nails, holding a small mic. Warm, curious expression. Character 2 – Baby Boy Speaker: 7–9 months old, standing in a white crib, wearing a fluffy ${safeColor} onesie with tiny cloud patterns and a matching knit beanie. Chubby cheeks, expressive lips, bright eyes, playful yet mock-serious face. Scene: Soft daylight fills a cozy room. Background gently blurred to focus on the interaction. Woman leans in, mic near baby’s mouth. Baby responds with exaggerated legal authority and comedic tone. Audio: Track 1 – Woman's voice: Warm, natural adult tone. Delivers full line, 1 sec pause. Track 2 – Baby's voice: High-pitched, innocent but mock-stern. Starts after pause. Dialogue (Portuguese): Woman: “${safeWoman}” Baby: “${safeBaby}”`;
       return base.replace(/\s+/g,' ').trim();
     }
 
     function refresh(){
-      const oneLine = buildPrompt(genderInput.value, colorInput.value, womanInput.value, babyInput.value);
+      const col = colorInput.value;
+      const woman = womanInput.value;
+      const baby = babyInput.value;
+      const oneLine = buildPrompt(col,woman,baby);
       preview.value = oneLine;
-      previewWoman.textContent = womanInput.value;
-      previewBaby.textContent = babyInput.value;
+      previewWoman.textContent = woman;
+      previewBaby.textContent = baby;
     }
 
     copyBtn.addEventListener('click', async () => {
@@ -124,7 +108,6 @@
     });
 
     refreshBtn.addEventListener('click', refresh);
-    genderInput.addEventListener('input', refresh);
     colorInput.addEventListener('input', refresh);
     womanInput.addEventListener('input', refresh);
     babyInput.addEventListener('input', refresh);
@@ -148,7 +131,7 @@
     document.getElementById('speakBaby').addEventListener('click',()=>speak(babyInput.value));
     document.getElementById('stopTTS').addEventListener('click',()=>speechSynthesis.cancel());
 
-    // ====== IA (Gemini) ======
+    // ====== Gemini API ======
     async function gerarFala(personagem){
       const tema = prompt("Digite o tema para a fala:");
       if(!tema) return;
@@ -159,18 +142,30 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ personagem, tema })
         });
-        const data = await resp.json();
+
+        const text = await resp.text(); // primeiro ler como texto
+
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch(e){
+          alert("Resposta inválida do servidor: " + text);
+          return;
+        }
+
         if(data.texto){
-          if(personagem === 'mulher') womanInput.value = data.texto;
+          if(personagem==='mulher') womanInput.value = data.texto;
           else babyInput.value = data.texto;
           refresh();
         } else {
           alert("Erro: " + (data.error || "Não foi possível gerar."));
         }
-      } catch (err) {
+
+      } catch(err){
         alert("Falha: " + err.message);
       }
     }
+
   </script>
 </body>
 </html>
